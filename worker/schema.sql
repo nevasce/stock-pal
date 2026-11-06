@@ -26,3 +26,5 @@ CREATE TABLE IF NOT EXISTS newsletters (
 CREATE TABLE IF NOT EXISTS picks (
   id INTEGER PRIMARY KEY AUTOINCREMENT, newsletter_id INTEGER, et_date TEXT, source TEXT, ticker TEXT,
   action TEXT, detail TEXT, price_at_receipt REAL);
+
+CREATE TABLE IF NOT EXISTS briefs (date TEXT PRIMARY KEY, created_ts TEXT, text TEXT, headline_count INTEGER);

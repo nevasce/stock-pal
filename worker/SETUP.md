@@ -129,6 +129,11 @@ Forwarded newsletters → Claude extracts the stock calls → D1 `newsletters` +
 
 Premium newsletter content is for personal use: it stays in your private database only. No scraping of logged-in subscriber sites (against Motley Fool's terms); enable all email alerts in the Fool account instead.
 
+## 12. Daily news brief (automatic)
+Every day at 8:30 PM ET (about 7:15 AM Nepal), one Telegram message: Claude's summary of the last ~24 hours of market news and your stocks' news, grouped as TOP 3 FOR YOUR PORTFOLIO, Macro & Fed, War & geopolitics, Tech & AI, Cyber & outages, Your stocks, Newsletter picks, and a calm "today's stance" line. Stored in D1 `briefs`. Run by hand: `/brief?token=YOUR_ADMIN_TOKEN`.
+
+The instant keyword alerts also cover AI/tech shifts (OpenAI, Anthropic, new AI models, data centers, AI capex, chipmakers, antitrust, IPOs, takeovers), financial shocks (bank failures, bailouts, flash crashes) and disasters (earthquakes, pandemics), in addition to Fed, war, tariffs and cyberattacks.
+
 ## What you'll receive
 - 🔻/🔺 **QQQ moves ≥0.5% within 10 minutes**
 - 📉/📈 **QQQ crosses ±1%, 1.5%, 2%, 2.5%, 3%** on the day (once each)
