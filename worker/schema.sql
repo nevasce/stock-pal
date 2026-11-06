@@ -19,3 +19,10 @@ ALTER TABLE baskets ADD COLUMN worst_ret_pct REAL;
 ALTER TABLE baskets ADD COLUMN best_ret_pct REAL;
 CREATE TABLE IF NOT EXISTS notes (id INTEGER PRIMARY KEY AUTOINCREMENT, ts TEXT, et_date TEXT, text TEXT);
 CREATE TABLE IF NOT EXISTS weekly (week_start TEXT PRIMARY KEY, created_ts TEXT, scorecard TEXT, lesson TEXT);
+
+CREATE TABLE IF NOT EXISTS newsletters (
+  id INTEGER PRIMARY KEY AUTOINCREMENT, received_ts TEXT, et_date TEXT, envelope_from TEXT, header_from TEXT,
+  subject TEXT, source TEXT, is_newsletter INTEGER, summary TEXT, text_excerpt TEXT);
+CREATE TABLE IF NOT EXISTS picks (
+  id INTEGER PRIMARY KEY AUTOINCREMENT, newsletter_id INTEGER, et_date TEXT, source TEXT, ticker TEXT,
+  action TEXT, detail TEXT, price_at_receipt REAL);

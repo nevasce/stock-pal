@@ -100,6 +100,31 @@ Optional settings: `DD_STOCK_PCT` (default `30`), `DD_MARKET_PCT` (default `10`)
 - **Every Friday 4:20–5:00 PM ET:** weekly scorecard (Quick vs. Patient, win rate, average win/loss, worst point, QQQ, questions Q2–Q4) plus Claude's lesson of the week. Run by hand: `/weekly?token=YOUR_ADMIN_TOKEN`.
 - Note: the Worker now reads the bot's messages every minute, so the `/chatid` link no longer shows your chat ID. Use @userinfobot if you need it again.
 
+## 11. Newsletter inbox (Motley Fool, Zacks, …)
+Forwarded newsletters → Claude extracts the stock calls → D1 `newsletters` + `picks` (with the price that day) → Telegram digest flagging overlaps with your holdings, the deep-dip list and open baskets.
+
+**A. Check nevasce.com's existing mail first.** Cloudflare → nevasce.com → **DNS → Records**, filter by **MX**.
+- **No MX records** → safe to continue.
+- **MX records exist** (Google Workspace, Zoho, etc.) → stop: enabling Email Routing could replace them. Use a subdomain-only setup or another domain.
+
+**B. Turn on Email Routing.** nevasce.com → **Email → Email Routing** → enable (Cloudflare adds the needed DNS records). Under **Settings → Subdomains**, add `in` so mail for `in.nevasce.com` is handled.
+
+**C. Create the address.** **Routing rules → Create address**:
+- Custom address: your private inbox address (e.g. `picks-xxxxxxxx@in.nevasce.com`)
+- Action: **Send to a Worker** → `market-watch`
+
+**D. Worker settings** (Variables and Secrets, type **Secret**):
+- `INBOX_ADDRESS` = the private address from step C
+- `ALLOWED_FORWARDERS` = your iCloud address (comma-separate if several)
+
+**E. iCloud rules.** icloud.com → Mail → ⚙️ → **Rules** → Add a rule for each sender:
+- If a message **is from** `fool.com` → **Forward to** the private address (keep "also keep in inbox")
+- Same for `zacks.com` and any other newsletter
+
+**F. Test.** Forward one newsletter by hand to the private address. You should get a 📬 Telegram digest within a minute. If you get "Rejected an email…", the message shows which sender to add to `ALLOWED_FORWARDERS`.
+
+Premium newsletter content is for personal use: it stays in your private database only.
+
 ## What you'll receive
 - 🔻/🔺 **QQQ moves ≥0.5% within 10 minutes**
 - 📉/📈 **QQQ crosses ±1%, 1.5%, 2%, 2.5%, 3%** on the day (once each)

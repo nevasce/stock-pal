@@ -9,8 +9,10 @@
 - [x] Deep-dip scanner: weekdays ~5 PM ET, stocks ≥30% off their 52-week high while QQQ is ≥10% off, with last EPS surprise, negative-headline count and a Claude verdict; Telegram + D1 `deepdip` table
 
 - [x] Learning loop: worst/best point per basket, Telegram journal notes (`/status`, `/help`), Friday weekly scorecard with lesson of the week (D1 `notes`, `weekly`), pre-registered experiment in `docs/EXPERIMENT.md`
+- [x] Newsletter inbox: forwarded Motley Fool / Zacks emails → Claude extracts stock calls → D1 `newsletters` + `picks` (price that day) → Telegram digest with overlaps (holdings, deep-dip list, baskets)
 
 ## Next
+- [ ] Newsletter scorecard: each source's picks vs. QQQ after 1/3/6 months
 - [ ] Real-trade journal via Telegram (`buy …` / `sell …`), pre-trade GO/NO-GO check, position sizer
 - [ ] Loss-limit alarms and 3 PM expiring-options reminders for real trades
 - [ ] Weekly scorecard for real trades: rules followed vs. broken
