@@ -93,6 +93,13 @@ Runs every weekday after 5:00 PM ET (about 3:45 AM Nepal time) in two steps a co
 Run it by hand: open `/deepdip?token=YOUR_ADMIN_TOKEN`, wait a minute, open it again.
 Optional settings: `DD_STOCK_PCT` (default `30`), `DD_MARKET_PCT` (default `10`), `DEEPDIP_POOL` (defaults to the basket pool).
 
+## 10. Journal and weekly scorecard (automatic)
+- **Send the bot any message** → saved as a journal note for today (D1 `notes`), and the bot replies "📝 Saved".
+- `/status` → open paper baskets with current, worst and best result. `/help` → commands.
+- Only messages from your own chat (`TELEGRAM_CHAT_ID`) are accepted.
+- **Every Friday 4:20–5:00 PM ET:** weekly scorecard (Quick vs. Patient, win rate, average win/loss, worst point, QQQ, questions Q2–Q4) plus Claude's lesson of the week. Run by hand: `/weekly?token=YOUR_ADMIN_TOKEN`.
+- Note: the Worker now reads the bot's messages every minute, so the `/chatid` link no longer shows your chat ID. Use @userinfobot if you need it again.
+
 ## What you'll receive
 - 🔻/🔺 **QQQ moves ≥0.5% within 10 minutes**
 - 📉/📈 **QQQ crosses ±1%, 1.5%, 2%, 2.5%, 3%** on the day (once each)

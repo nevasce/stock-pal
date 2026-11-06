@@ -14,3 +14,8 @@ CREATE TABLE IF NOT EXISTS daily (
 CREATE TABLE IF NOT EXISTS deepdip (
   date TEXT, symbol TEXT, price REAL, high_52w REAL, dd_pct REAL, qqq_dd_pct REAL, setup_active INTEGER,
   eps_surprise_pct REAL, neg_headlines INTEGER, headlines TEXT, verdict TEXT, PRIMARY KEY (date, symbol));
+
+ALTER TABLE baskets ADD COLUMN worst_ret_pct REAL;
+ALTER TABLE baskets ADD COLUMN best_ret_pct REAL;
+CREATE TABLE IF NOT EXISTS notes (id INTEGER PRIMARY KEY AUTOINCREMENT, ts TEXT, et_date TEXT, text TEXT);
+CREATE TABLE IF NOT EXISTS weekly (week_start TEXT PRIMARY KEY, created_ts TEXT, scorecard TEXT, lesson TEXT);
