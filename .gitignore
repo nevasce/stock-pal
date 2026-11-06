@@ -1,0 +1,12 @@
+# Never commit keys
+.env
+.env.*
+.dev.vars
+*.pem
+# Large raw price downloads (re-create with research/daily.py and research/bars.py)
+research/daily.json
+research/qqq5.json
+research/*.log
+node_modules/
+.wrangler/
+__pycache__/
