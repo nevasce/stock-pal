@@ -56,6 +56,17 @@ export default {
       await run(env, true);
       return json({ ran: true });
     }
+    if (url.pathname === "/basket-now") {
+      // Paper test: buy today's two baskets on the next cron run instead of waiting for the late-day window
+      const state = await loadState(env);
+      const size = Math.min(Math.max(parseInt(url.searchParams.get("size") || "7", 10) || 7, 3), 12);
+      const today = etParts(new Date()).date;
+      state.bk = state.bk || { baskets: [], seq: 0, history: [], lastEntryDate: "", reportDate: "", lastDayCounted: "", startDate: "", startQQQ: null, verified: false, disabled: "" };
+      if (state.bk.lastEntryDate === today) return json({ ok: false, reason: "Today's baskets were already bought." });
+      state.bk.forceEntry = { date: today, size };
+      await env.STATE.put("state", JSON.stringify(state));
+      return json({ ok: true, message: `Two paper baskets of ${size} stocks will be bought within about a minute (if the market is open). Watch Telegram.` });
+    }
     if (url.pathname === "/deepdip") {
       // Manual scan: call once for step 1 (prices), again 1+ minute later for step 2 (news + verdicts + Telegram)
       const state = await loadState(env);
@@ -381,7 +392,9 @@ async function basketModule(env, state, et, msgs) {
 
   const minsToClose = (Date.parse(clock.next_close) - Date.now()) / 60000;
   const entryWindow = parseFloat(env.ENTRY_WINDOW_MIN || "90");
-  const needEntry = b.lastEntryDate !== et.date && minsToClose <= entryWindow && minsToClose >= 8;
+  const forcedEntry = !!(b.forceEntry && b.forceEntry.date === et.date);
+  if (forcedEntry) cfg.size = b.forceEntry.size;
+  const needEntry = b.lastEntryDate !== et.date && ((minsToClose <= entryWindow && minsToClose >= 8) || (forcedEntry && minsToClose >= 5));
   const openBaskets = b.baskets.filter((k) => k.status === "open");
   const needCheck = openBaskets.some((k) => k.openDate !== et.date && k.legs.every((l) => l.qty != null));
   if (!needEntry && !needCheck) return heavy;
@@ -423,7 +436,7 @@ async function basketModule(env, state, et, msgs) {
       return { s, p, chg: p / x.prevDailyBar.c - 1, nearLow: p <= x.dailyBar.l * 1.005 };
     }).filter(Boolean).sort((a, b2) => a.chg - b2.chg);
     let picks = rows.filter((r) => r.chg < 0 && r.nearLow).slice(0, cfg.size);
-    const lastChance = minsToClose <= 15 || env.FORCE_ENTRY === "1";
+    const lastChance = minsToClose <= 15 || env.FORCE_ENTRY === "1" || forcedEntry;
     if (picks.length >= cfg.size || lastChance) {
       if (picks.length < cfg.size) picks = rows.slice(0, cfg.size); // fallback: biggest fallers (or smallest gainers)
       const room = cfg.maxOpen - b.baskets.length;
@@ -458,6 +471,7 @@ async function basketModule(env, state, et, msgs) {
           `\nQQQ today: ${fmt((price("QQQ") / ((snaps.QQQ && snaps.QQQ.prevDailyBar && snaps.QQQ.prevDailyBar.c) || price("QQQ")) - 1) * 100)}`);
       }
       b.lastEntryDate = et.date;
+      delete b.forceEntry;
     }
   }
   return heavy;
