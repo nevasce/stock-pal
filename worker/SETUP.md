@@ -123,7 +123,11 @@ Forwarded newsletters → Claude extracts the stock calls → D1 `newsletters` +
 
 **F. Test.** Forward one newsletter by hand to the private address. You should get a 📬 Telegram digest within a minute. If you get "Rejected an email…", the message shows which sender to add to `ALLOWED_FORWARDERS`.
 
-Premium newsletter content is for personal use: it stays in your private database only.
+**Daily limits (Claude cost control):** Motley Fool emails are always analyzed, up to `FOOL_DAILY_CAP` (default `40`) a day. Other senders stop being analyzed after `NEWSLETTER_DAILY_CAP` (default `30`) a day. Emails over the limit are still saved (summary "Not analyzed: daily limit reached"), just not analyzed.
+
+**Current setup:** private inbox `picks-n7makoab@mystockwatching.app` (domain bought Nov 2026, not set to auto-renew). iCloud web rules forward `fool.com`, `zacks.com`, `bloomberg.com`, `stocknews.com`. To move to a new domain later: onboard it in Email Routing, create the address → Send to Worker `market-watch`, update the `INBOX_ADDRESS` secret, update the iCloud rules.
+
+Premium newsletter content is for personal use: it stays in your private database only. No scraping of logged-in subscriber sites (against Motley Fool's terms); enable all email alerts in the Fool account instead.
 
 ## What you'll receive
 - 🔻/🔺 **QQQ moves ≥0.5% within 10 minutes**

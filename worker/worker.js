@@ -546,6 +546,25 @@ async function handleNewsletter(message, env) {
   const text = parsed.text.slice(0, 15000);
   if (!text.trim()) { await telegram(env, `📬 Got "${subject}" but couldn't read its text.`); return; }
 
+  // Daily limit on Claude analysis. Motley Fool is always analyzed (up to its own higher limit);
+  // other senders stop being analyzed after NEWSLETTER_DAILY_CAP, but are still saved for later.
+  const isFool = /fool\.com|motley fool/i.test(headerFrom + " " + subject + " " + text.slice(0, 3000));
+  const today = etParts(new Date()).date;
+  let capped = false;
+  if (env.DB) {
+    try {
+      const row = await env.DB.prepare("SELECT sum(CASE WHEN source LIKE '%Fool%' THEN 1 ELSE 0 END) fool, sum(CASE WHEN source LIKE '%Fool%' THEN 0 ELSE 1 END) other FROM newsletters WHERE et_date = ? AND summary IS NOT NULL AND summary NOT LIKE 'Not analyzed%'").bind(today).first();
+      const foolCap = parseInt(env.FOOL_DAILY_CAP || "40", 10);
+      const otherCap = parseInt(env.NEWSLETTER_DAILY_CAP || "30", 10);
+      capped = isFool ? (row && row.fool >= foolCap) : (row && row.other >= otherCap);
+    } catch (e) { console.log("cap check error", e && e.message); }
+  }
+  if (capped) {
+    await dbRun(env, "INSERT INTO newsletters (received_ts, et_date, envelope_from, header_from, subject, source, is_newsletter, summary, text_excerpt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+      [new Date().toISOString(), today, envelopeFrom, headerFrom.slice(0, 300), subject.slice(0, 300), guessSource(headerFrom + " " + subject), null, "Not analyzed: daily limit reached", text.slice(0, 20000)]);
+    return;
+  }
+
   const ex = await extractPicks(env, subject, headerFrom, text);
   const source = (ex && ex.source) || guessSource(headerFrom + " " + subject + " " + text.slice(0, 2000));
   const picks = ((ex && ex.picks) || []).filter((p) => /^[A-Z][A-Z.\-]{0,6}$/.test(p.ticker || "")).slice(0, 25);
