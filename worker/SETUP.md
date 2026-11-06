@@ -85,6 +85,14 @@ That's all. It starts on the next trading day. Optional plain-text settings:
 3. From the **next day** on (never the same day), it sells each basket **all together** when it hits its target, or after 30 trading days.
 4. Telegram: a message on every buy and sell, plus a **daily report after the close** comparing Quick vs. Patient vs. QQQ.
 
+## 9. Deep-dip scanner (automatic)
+Runs every weekday after 5:00 PM ET (about 3:45 AM Nepal time) in two steps a couple of minutes apart, and sends one Telegram summary:
+- whether QQQ is ≥10% below its 52-week high (setup active or not)
+- stocks in the pool ≥30% below their 52-week high, with last EPS surprise, negative headlines in the last 14 days, and a Claude verdict (✅ fits / ⚠️ company-specific / ❌ avoid)
+
+Run it by hand: open `/deepdip?token=YOUR_ADMIN_TOKEN`, wait a minute, open it again.
+Optional settings: `DD_STOCK_PCT` (default `30`), `DD_MARKET_PCT` (default `10`), `DEEPDIP_POOL` (defaults to the basket pool).
+
 ## What you'll receive
 - 🔻/🔺 **QQQ moves ≥0.5% within 10 minutes**
 - 📉/📈 **QQQ crosses ±1%, 1.5%, 2%, 2.5%, 3%** on the day (once each)

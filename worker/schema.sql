@@ -10,3 +10,7 @@ CREATE TABLE IF NOT EXISTS alerts (
 CREATE TABLE IF NOT EXISTS daily (
   date TEXT PRIMARY KEY, qqq REAL, qqq_chg REAL, spy REAL, spy_chg REAL, open_baskets INTEGER,
   open_value_pnl REAL, realized_quick REAL, realized_patient REAL, quotes TEXT);
+
+CREATE TABLE IF NOT EXISTS deepdip (
+  date TEXT, symbol TEXT, price REAL, high_52w REAL, dd_pct REAL, qqq_dd_pct REAL, setup_active INTEGER,
+  eps_surprise_pct REAL, neg_headlines INTEGER, headlines TEXT, verdict TEXT, PRIMARY KEY (date, symbol));
