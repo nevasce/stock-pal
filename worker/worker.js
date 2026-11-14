@@ -945,17 +945,20 @@ ITEMS:
 ${list.map((x, i) => `${i}. [${x.source}] ${x.title}${x.extra ? " — " + x.extra : ""}`).join("\n")}`;
 
   let pick = null;
+  const model = env.PULSE_MODEL || env.CLAUDE_MODEL || "claude-opus-5-5";
+  const isHaiku = /haiku/i.test(model); // Haiku has no server-side refusal fallback: don't send that option
   try {
-    const r = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: { "content-type": "application/json", "x-api-key": env.ANTHROPIC_API_KEY, "anthropic-version": "2026-10-21", "anthropic-beta": "server-side-fallback-2026-07-01" },
-      body: JSON.stringify({ model: env.PULSE_MODEL || env.CLAUDE_MODEL || "claude-opus-5-5", max_tokens: 4000, output_config: { effort: "low", format: { type: "json_schema", schema } }, fallbacks: "default", messages: [{ role: "user", content: prompt }] }),
-    });
+    const headers = { "content-type": "application/json", "x-api-key": env.ANTHROPIC_API_KEY, "anthropic-version": "2026-10-21" };
+    const body = { model, max_tokens: 4000, output_config: { effort: "low", format: { type: "json_schema", schema } }, messages: [{ role: "user", content: prompt }] };
+    if (!isHaiku) { headers["anthropic-beta"] = "server-side-fallback-2026-07-01"; body.fallbacks = "default"; }
+    const r = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers, body: JSON.stringify(body) });
+    state.pulseLast = { ts: new Date().toISOString(), model, status: r.status };
     if (r.ok) {
       const j = await r.json();
+      state.pulseLast.stop = j.stop_reason;
       if (j.stop_reason !== "refusal") pick = JSON.parse((j.content || []).filter((b) => b.type === "text").map((b) => b.text).join(""));
-    } else console.log("pulse http", r.status, (await r.text()).slice(0, 200));
-  } catch (e) { console.log("pulse error", e && e.message); }
+    } else { state.pulseLast.error = (await r.text()).slice(0, 200); }
+  } catch (e) { state.pulseLast = { ts: new Date().toISOString(), model, error: String(e && e.message).slice(0, 200) }; }
 
   for (const x of list) seen.add(x.url); // don't offer the same items again next hour
   state.pulseSeen = [...seen].slice(-800);
