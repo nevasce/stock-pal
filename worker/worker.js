@@ -810,6 +810,8 @@ async function telegramInbox(env, state, et) {
     if (!state.tgBot || Date.now() - (state.tgBot.at || 0) > 3600e3) {
       const me = await (await fetch(`https://api.telegram.org/bot${env.TELEGRAM_TOKEN}/getMe`)).json();
       if (me && me.ok) state.tgBot = { at: Date.now(), username: me.result.username, name: me.result.first_name };
+      const wh = await (await fetch(`https://api.telegram.org/bot${env.TELEGRAM_TOKEN}/getWebhookInfo`)).json();
+      if (wh && wh.ok && state.tgBot) state.tgBot.webhook = !!wh.result.url; // a webhook would steal messages from getUpdates
     }
   } catch (_) {}
   for (const u of (j && j.result) || []) {
