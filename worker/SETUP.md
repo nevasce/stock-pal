@@ -134,6 +134,10 @@ Every day at 8:30 PM ET (about 7:15 AM Nepal), one Telegram message: Claude's su
 
 The instant keyword alerts also cover AI/tech shifts (OpenAI, Anthropic, new AI models, data centers, AI capex, chipmakers, antitrust, IPOs, takeovers), financial shocks (bank failures, bailouts, flash crashes) and disasters (earthquakes, pandemics), in addition to Fed, war, tariffs and cyberattacks.
 
+## 13. Hourly tech pulse (optional, "one tweet an hour")
+Set the plain-text variable `TECH_PULSE` = `on`. Every hour at :07 (day and night) the Worker gathers fresh items from Hacker News, arXiv (new AI/ML papers), Hugging Face (trending models), GitHub (fast-rising new AI repos, copycats filtered) and Finnhub tech news, skips anything already sent, and Claude picks the single most useful one: a 2–3 line note with "Why it matters" and a link. Stored in D1 `pulses`.
+Cost: one Claude call per hour (~24/day). `PULSE_MODEL` overrides the model just for this (e.g. `claude-haiku-5-5` costs far less than the default `claude-opus-5-5`).
+
 ## What you'll receive
 - 🔻/🔺 **QQQ moves ≥0.5% within 10 minutes**
 - 📉/📈 **QQQ crosses ±1%, 1.5%, 2%, 2.5%, 3%** on the day (once each)
