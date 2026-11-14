@@ -797,9 +797,14 @@ async function telegramInbox(env, state, et) {
   let j;
   try {
     const r = await fetch(`https://api.telegram.org/bot${env.TELEGRAM_TOKEN}/getUpdates?timeout=0&limit=20&offset=${offset}&allowed_updates=${encodeURIComponent('["message"]')}`);
-    if (!r.ok) return;
+    // diagnostics (Telegram's reply only, never the token)
+    state.tgInbox = { ts: new Date().toISOString(), status: r.status };
+    if (!r.ok) { state.tgInbox.error = (await r.text()).slice(0, 200); return; }
     j = await r.json();
-  } catch (e) { return; }
+    state.tgInbox.updates = ((j && j.result) || []).length;
+    state.tgInbox.chats = [...new Set(((j && j.result) || []).map((u) => u.message && u.message.chat && u.message.chat.id).filter(Boolean).map(String))]
+      .map((id) => (id === String(env.TELEGRAM_CHAT_ID) ? "your chat" : "another chat"));
+  } catch (e) { state.tgInbox = { ts: new Date().toISOString(), error: String(e && e.message).slice(0, 200) }; return; }
   for (const u of (j && j.result) || []) {
     state.tgOffset = Math.max(state.tgOffset || 0, u.update_id + 1);
     const m = u.message;
