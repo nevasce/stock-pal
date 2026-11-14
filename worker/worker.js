@@ -805,6 +805,13 @@ async function telegramInbox(env, state, et) {
     state.tgInbox.chats = [...new Set(((j && j.result) || []).map((u) => u.message && u.message.chat && u.message.chat.id).filter(Boolean).map(String))]
       .map((id) => (id === String(env.TELEGRAM_CHAT_ID) ? "your chat" : "another chat"));
   } catch (e) { state.tgInbox = { ts: new Date().toISOString(), error: String(e && e.message).slice(0, 200) }; return; }
+  // which bot this token belongs to (public username only), re-checked hourly
+  try {
+    if (!state.tgBot || Date.now() - (state.tgBot.at || 0) > 3600e3) {
+      const me = await (await fetch(`https://api.telegram.org/bot${env.TELEGRAM_TOKEN}/getMe`)).json();
+      if (me && me.ok) state.tgBot = { at: Date.now(), username: me.result.username, name: me.result.first_name };
+    }
+  } catch (_) {}
   for (const u of (j && j.result) || []) {
     state.tgOffset = Math.max(state.tgOffset || 0, u.update_id + 1);
     const m = u.message;
