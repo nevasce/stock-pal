@@ -1000,6 +1000,22 @@ ${list.map((x, i) => `${i}. [${x.source}] ${x.title}${x.extra ? " — " + x.extr
 // One message a day: Claude's summary of the last ~24 hours of market news, grouped by theme, plus your
 // stocks' news, today's market move, newsletter picks and the paper baskets. Catches stories the keyword alerts miss.
 
+
+// Insider open-market buys (P) and sales (S) in the last 7 days, one line per holding with activity (SEC filings via Finnhub)
+async function insiderLines(env, holdings) {
+  const to = new Date().toISOString().slice(0, 10), from7 = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
+  const fh = (path) => fetch(`https://finnhub.io/api/v1${path}`, { headers: { "X-Finnhub-Token": env.FINNHUB_KEY } }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+  const lines = await Promise.all(holdings.filter((s) => s !== "QQQ").map((s) => fh(`/stock/insider-transactions?symbol=${s}&from=${from7}&to=${to}`).then((j) => {
+    const rows = ((j && j.data) || []).filter((r) => (r.transactionCode === "P" || r.transactionCode === "S") && !r.isDerivative && r.change);
+    if (!rows.length) return null;
+    const buys = rows.filter((r) => r.transactionCode === "P").reduce((a, r) => a + r.change, 0);
+    const sells = -rows.filter((r) => r.transactionCode === "S").reduce((a, r) => a + r.change, 0);
+    const top = rows.sort((a, b) => Math.abs(b.change * (b.transactionPrice || 0)) - Math.abs(a.change * (a.transactionPrice || 0)))[0];
+    return `${s}: insiders bought ${buys.toLocaleString()} sh, sold ${sells.toLocaleString()} sh; largest: ${String(top.name || "").slice(0, 30)} ${top.transactionCode === "P" ? "BUY" : "SELL"} ${Math.abs(top.change).toLocaleString()} @ $${Math.round(top.transactionPrice || 0)} (${top.transactionDate})`;
+  }).catch(() => null)));
+  return lines.filter(Boolean);
+}
+
 async function briefModule(env, state, et, msgs, manual) {
   if (!env.ANTHROPIC_API_KEY) return false;
   if (!manual) {
@@ -1012,18 +1028,9 @@ async function briefModule(env, state, et, msgs, manual) {
   const fh = (path) => fetch(`https://finnhub.io/api/v1${path}`, { headers: { "X-Finnhub-Token": env.FINNHUB_KEY } }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
   const from = new Date(Date.now() - 2 * 86400000).toISOString().slice(0, 10), to = new Date().toISOString().slice(0, 10);
 
-  const from7 = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
   const [general, merger, quotes, insiders, ...company] = await Promise.all([
     fh("/news?category=general"), fh("/news?category=merger"), getQuotes(env, ["QQQ", "SPY", ...holdings]),
-    // insider open-market buys (P) and sales (S) in the last 7 days, one line per holding with activity
-    Promise.all(holdings.filter((s) => s !== "QQQ").map((s) => fh(`/stock/insider-transactions?symbol=${s}&from=${from7}&to=${to}`).then((j) => {
-      const rows = ((j && j.data) || []).filter((r) => (r.transactionCode === "P" || r.transactionCode === "S") && !r.isDerivative && r.change);
-      if (!rows.length) return null;
-      const buys = rows.filter((r) => r.transactionCode === "P").reduce((a, r) => a + r.change, 0);
-      const sells = -rows.filter((r) => r.transactionCode === "S").reduce((a, r) => a + r.change, 0);
-      const top = rows.sort((a, b) => Math.abs(b.change * (b.transactionPrice || 0)) - Math.abs(a.change * (a.transactionPrice || 0)))[0];
-      return `- ${s}: insiders bought ${buys.toLocaleString()} sh, sold ${sells.toLocaleString()} sh; largest: ${String(top.name || "").slice(0, 30)} ${top.transactionCode === "P" ? "BUY" : "SELL"} ${Math.abs(top.change).toLocaleString()} @ $${Math.round(top.transactionPrice || 0)} (${top.transactionDate})`;
-    }).catch(() => null))).then((a) => a.filter(Boolean)),
+    insiderLines(env, holdings).then((a) => a.map((l) => "- " + l)),
     ...holdings.map((s) => fh(`/company-news?symbol=${s}&from=${from}&to=${to}`).then((j) => [s, j])),
   ]);
   state.pb = state.pb || { slot: "", seen: [], wx: null, cal: null, sm: null };
@@ -1100,7 +1107,7 @@ End with: TODAY'S STANCE: one calm line (e.g. "No action needed; watch X"). Neve
 // daily brief), catalyst calendar (earnings for holdings, FOMC, opex, lock-ups) and your rules.
 // Turn on with the plain variable BRIEFING=on. Optional plain variables:
 //   HOLDINGS_SHARES "NVDA:25,MELI:3,…"  RULES "one line"  LOCKUPS "ANT:2027-05-18"  FOMC_DATES "2026-12-10,…"  BRIEFING_MODEL (default claude-haiku-5-5)
-// Caches: weather refreshed hourly at :02 (1 Alpaca call), calendar hourly at :32 (1 Finnhub call), insiders from briefModule.
+// Caches: weather refreshed hourly at :02 (1 Alpaca call), calendar hourly at :32 (1 Finnhub call), insiders at :47 once a day (and by the daily brief).
 
 const FOMC_DEFAULT = "2026-12-10";
 const COMPANY_NAMES = { NVDA: "nvidia", MELI: "mercadolibre", TSM: "tsmc|taiwan semi", META: "meta platforms|\\bmeta\\b", AMD: "\\bamd\\b", AVGO: "broadcom", ANET: "arista", MU: "micron", PACS: "\\bpacs\\b", ANT: "anthropic", NET: "cloudflare", CRWD: "crowdstrike", AXON: "\\baxon\\b", GOOG: "alphabet|google", MSFT: "microsoft", AAPL: "apple", AMZN: "amazon", TSLA: "tesla" };
@@ -1194,11 +1201,14 @@ async function briefingModule(env, state, et, msgs, manual, quotesIn) {
   let quotes = quotesIn && Object.keys(quotesIn).length ? quotesIn : null;
 
   // cache refreshes on quiet minutes (keeps each cron run under the subrequest limit)
-  if (et.minute === 2 || (!pb.wx && manual)) {
+  if (et.minute === 2 || !pb.wx) {
     try { quotes = quotes || await getQuotes(env, ["QQQ", "SPY", "SMH", ...holdings]); const wx = await refreshWeather(env, holdings, shares, quotes); if (wx) pb.wx = wx; } catch (e) { console.log("weather error", e && e.message); }
   }
-  if (et.minute === 32 || (!pb.cal && manual)) {
+  if (et.minute === 32 || !pb.cal) {
     try { pb.cal = await refreshCalendar(env, holdings, et); } catch (e) { console.log("calendar error", e && e.message); }
+  }
+  if (et.minute === 47 && (!pb.sm || Date.now() - (pb.sm.ts || 0) > 20 * 3600e3)) {
+    try { pb.sm = { ts: Date.now(), lines: await insiderLines(env, holdings) }; } catch (e) { console.log("insider error", e && e.message); }
   }
 
   const slot = open ? `${et.date} ${et.hh}:${String(Math.floor(et.minute / 5) * 5).padStart(2, "0")}` : `${et.date} ${et.hh}`;
@@ -1207,6 +1217,7 @@ async function briefingModule(env, state, et, msgs, manual, quotesIn) {
   pb.slot = slot;
 
   quotes = quotes || await getQuotes(env, ["QQQ", "SPY", "SMH", ...holdings]);
+  if (!quotes.SMH) Object.assign(quotes, await getQuotes(env, ["SMH"]));
   const q = quotes.QQQ;
   if (!q || !q.c) return true;
 
