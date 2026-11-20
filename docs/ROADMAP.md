@@ -18,9 +18,9 @@
 
 ## Next
 - [ ] Newsletter scorecard: each source's picks vs. QQQ after 1/3/6 months
-- [ ] Real-trade journal via Telegram (`buy …` / `sell …`), pre-trade GO/NO-GO check, position sizer
+- [x] Real-trade log via Telegram (`buy … #tag` / `sell …` / `opt …` / `/trades`): FIFO cost basis, realized P/L, rule check per trade, scoreboard in the Friday scorecard (D1 `trades`)
+- [ ] Pre-trade GO/NO-GO check and position sizer
 - [ ] Loss-limit alarms and 3 PM expiring-options reminders for real trades
-- [ ] Weekly scorecard for real trades: rules followed vs. broken
 - [ ] Earnings lab: implied move vs. usual move from Alpaca options data
 
 ## Review dates

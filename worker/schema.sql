@@ -33,3 +33,6 @@ CREATE TABLE IF NOT EXISTS pulses (id INTEGER PRIMARY KEY AUTOINCREMENT, ts TEXT
 
 -- Stock Pal briefing (every 5 min in market hours, hourly otherwise)
 CREATE TABLE IF NOT EXISTS briefings (id INTEGER PRIMARY KEY AUTOINCREMENT, ts TEXT, et_date TEXT, kind TEXT, text TEXT);
+
+-- Real-trade log (Telegram: buy / sell / opt / /trades). FIFO cost basis; pnl on sells.
+CREATE TABLE IF NOT EXISTS trades (id INTEGER PRIMARY KEY AUTOINCREMENT, ts TEXT, et_date TEXT, kind TEXT, side TEXT, symbol TEXT, qty REAL, price REAL, amount REAL, open_qty REAL, tag TEXT, rule TEXT, note TEXT, pnl REAL, basis REAL, regime TEXT);

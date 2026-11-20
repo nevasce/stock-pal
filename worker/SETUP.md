@@ -148,8 +148,16 @@ Set the plain-text variable `BRIEFING` = `on`. One fixed-layout Telegram message
 6. **Next:** earnings for your holdings (21 days), monthly opex, FOMC (`FOMC_DATES`), IPO lock-ups (`LOCKUPS`, e.g. `ANT:2027-05-18`).
 7. **Rules:** your one-line rules (`RULES`, has a default).
 
-Cadence: weekdays 9:30 AM–4:00 PM ET at :00/:05/…; otherwise every hour at :00 (day and night, weekends too). Weather refreshes hourly at :02 (one Alpaca bars call), the calendar hourly at :32. Stored in D1 `briefings`. Run one by hand: `/briefing?token=YOUR_ADMIN_TOKEN`.
+Layout is phone-first (Telegram HTML: bold headers, one idea per line, 3 stocks per line). Cadence: weekdays 9:30 AM–4:00 PM ET at :00/:05/…; otherwise every hour at :00 (day and night, weekends too). Weather refreshes hourly at :02 (one Alpaca bars call), the calendar hourly at :32. Stored in D1 `briefings`. Run one by hand: `/briefing?token=YOUR_ADMIN_TOKEN`.
 Cost: ~95 messages/day; Claude (Haiku) is called only when there are new headlines, roughly $0.50–1.50/month. To turn it off, set `BRIEFING` to `off`.
+
+## 15. Real-trade log (Telegram)
+Log every real buy and sell point by messaging the bot; it keeps cost basis (FIFO), realized P/L and a rule check in D1 `trades`:
+- `buy NVDA 10 @ 136.5 #planned` · `sell NVDA 10 @ 140 #trim`
+- `opt buy NVDA call 136 0dte 100` · `opt sell NVDA 60` (dollars of premium / proceeds)
+- Tags for the decision type: `#planned #signal #trim #feel #panic #fomo`; rule status `#ok` / `#broken`. A buy in a 🌧 Storm regime or tagged #feel/#panic/#fomo is marked rule-broken unless `#ok` is given.
+- `/trades` → open lots with live P/L, last closed trades, rule scoreboard (followed vs broken, P/L each).
+The Friday scorecard adds a "Real trades" section (bought this week, closed this week, scoreboard since start, open lots) and the lesson of the week uses it.
 
 ## What you'll receive
 - 🔻/🔺 **QQQ moves ≥0.5% within 10 minutes**
