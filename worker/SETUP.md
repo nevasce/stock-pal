@@ -138,6 +138,19 @@ The instant keyword alerts also cover AI/tech shifts (OpenAI, Anthropic, new AI 
 Set the plain-text variable `TECH_PULSE` = `on`. Every hour at :07 (day and night) the Worker gathers fresh items from Hacker News, arXiv (new AI/ML papers), Hugging Face (trending models), GitHub (fast-rising new AI repos, copycats filtered) and Finnhub tech news, skips anything already sent, and Claude picks the single most useful one: a 2–3 line note with "Why it matters" and a link. Stored in D1 `pulses`.
 Cost: one Claude call per hour (~24/day). `PULSE_MODEL` overrides the model just for this (e.g. `claude-haiku-5-5` costs far less than the default `claude-opus-5-5`). **Live setting: `TECH_PULSE=on`, `PULSE_MODEL=claude-haiku-5-5`** (about $0.40/month). The last Claude call's status is kept in KV state as `pulseLast` for troubleshooting.
 
+## 14. Stock Pal briefing: every 5 minutes while the market is open, hourly otherwise
+Set the plain-text variable `BRIEFING` = `on`. One fixed-layout Telegram message, same order every time:
+1. **Header:** date, time ET, market weather (☀️ Clear / ⛅ Mixed / 🌧 Storm, from QQQ vs its 50/200-day averages and 20-day volatility).
+2. **Market:** QQQ (open/low/high), SPY, SMH; trend line (distance to 50d/200d, volatility, breadth = how many holdings are above their 50-day, distance below the 52-week high).
+3. **Your book:** value and day P/L (needs `HOLDINGS_SHARES`, e.g. `NVDA:25,MELI:3`), every holding sorted by biggest move, risk card (portfolio beta vs QQQ, top-3 concentration, "normal day" and "bad day" dollar swings).
+4. **New since last:** up to 3 market-moving headlines not shown before, plus a one-line "why" from Claude Haiku (only when there is news).
+5. **Smart money:** insider open-market buys/sells in your holdings over the last 7 days (from the daily brief's SEC scan).
+6. **Next:** earnings for your holdings (21 days), monthly opex, FOMC (`FOMC_DATES`), IPO lock-ups (`LOCKUPS`, e.g. `ANT:2027-05-18`).
+7. **Rules:** your one-line rules (`RULES`, has a default).
+
+Cadence: weekdays 9:30 AM–4:00 PM ET at :00/:05/…; otherwise every hour at :00 (day and night, weekends too). Weather refreshes hourly at :02 (one Alpaca bars call), the calendar hourly at :32. Stored in D1 `briefings`. Run one by hand: `/briefing?token=YOUR_ADMIN_TOKEN`.
+Cost: ~95 messages/day; Claude (Haiku) is called only when there are new headlines, roughly $0.50–1.50/month. To turn it off, set `BRIEFING` to `off`.
+
 ## What you'll receive
 - 🔻/🔺 **QQQ moves ≥0.5% within 10 minutes**
 - 📉/📈 **QQQ crosses ±1%, 1.5%, 2%, 2.5%, 3%** on the day (once each)

@@ -14,13 +14,13 @@
 - [x] Hourly tech pulse on Telegram (HN, arXiv, Hugging Face, GitHub, Finnhub tech; D1 `pulses`), switched on with TECH_PULSE=on
 - [x] Scheduled Claude briefings 3×/day (Nepal 6:52 AM recap, 12:52 PM midday, 7:22 PM pre-open) with Tech radar + Early signal + Smart money (insiders, 13F/hedge funds, analysts, short sellers)
 - [x] Daily Telegram brief: Smart money line (Finnhub insider transactions for holdings)
+- [x] Stock Pal briefing on Telegram: every 5 min in market hours, hourly otherwise — market weather (regime), book P/L + risk card (beta, concentration, normal/bad day $), new headlines + Haiku why, insiders, catalyst calendar (earnings, opex, FOMC, lock-ups), rules (D1 `briefings`)
 
 ## Next
 - [ ] Newsletter scorecard: each source's picks vs. QQQ after 1/3/6 months
 - [ ] Real-trade journal via Telegram (`buy …` / `sell …`), pre-trade GO/NO-GO check, position sizer
 - [ ] Loss-limit alarms and 3 PM expiring-options reminders for real trades
 - [ ] Weekly scorecard for real trades: rules followed vs. broken
-- [ ] Market weather (trend, volatility, rates) and concentration guard
 - [ ] Earnings lab: implied move vs. usual move from Alpaca options data
 
 ## Review dates

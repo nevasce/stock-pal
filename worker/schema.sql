@@ -30,3 +30,6 @@ CREATE TABLE IF NOT EXISTS picks (
 CREATE TABLE IF NOT EXISTS briefs (date TEXT PRIMARY KEY, created_ts TEXT, text TEXT, headline_count INTEGER);
 
 CREATE TABLE IF NOT EXISTS pulses (id INTEGER PRIMARY KEY AUTOINCREMENT, ts TEXT, source TEXT, title TEXT, url TEXT, note TEXT);
+
+-- Stock Pal briefing (every 5 min in market hours, hourly otherwise)
+CREATE TABLE IF NOT EXISTS briefings (id INTEGER PRIMARY KEY AUTOINCREMENT, ts TEXT, et_date TEXT, kind TEXT, text TEXT);
