@@ -31,7 +31,7 @@ Worker → **Settings** → **Variables and Secrets** → **Add**. Choose type *
 Optional plain-text variables:
 | Name | Default | Purpose |
 |---|---|---|
-| `HOLDINGS` | `NVDA,AMD,MU,TSM,AVGO,META,GOOG,ANET,PLTR,CRWD,TSLA,STRL` | stocks to watch (comma-separated) |
+| `HOLDINGS` | `NVDA,MELI,TSM,QQQ,META,AMD,AVGO,ANET,MU,PACS,ANT,NET,CRWD,AXON` | stocks to watch (comma-separated) |
 | `MAX_AI_CALLS_PER_DAY` | `15` | hard cap on Claude explanations per day |
 | `CLAUDE_MODEL` | `claude-opus-5-5` | `claude-haiku-5-5` is about 40× cheaper but less insightful |
 

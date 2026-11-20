@@ -7,7 +7,7 @@
 // Required binding: KV namespace bound as  STATE
 // Optional plain variables: HOLDINGS, CLAUDE_MODEL, MAX_AI_CALLS_PER_DAY
 
-const DEFAULT_HOLDINGS = "NVDA,AMD,MU,TSM,AVGO,META,GOOG,ANET,PLTR,CRWD,TSLA,STRL";
+const DEFAULT_HOLDINGS = "NVDA,MELI,TSM,QQQ,META,AMD,AVGO,ANET,MU,PACS,ANT,NET,CRWD,AXON";
 const INDEXES = ["QQQ", "SPY"];
 
 // Alert thresholds
