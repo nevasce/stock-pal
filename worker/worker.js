@@ -997,8 +997,18 @@ async function briefModule(env, state, et, msgs, manual) {
   const fh = (path) => fetch(`https://finnhub.io/api/v1${path}`, { headers: { "X-Finnhub-Token": env.FINNHUB_KEY } }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
   const from = new Date(Date.now() - 2 * 86400000).toISOString().slice(0, 10), to = new Date().toISOString().slice(0, 10);
 
-  const [general, merger, quotes, ...company] = await Promise.all([
+  const from7 = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
+  const [general, merger, quotes, insiders, ...company] = await Promise.all([
     fh("/news?category=general"), fh("/news?category=merger"), getQuotes(env, ["QQQ", "SPY", ...holdings]),
+    // insider open-market buys (P) and sales (S) in the last 7 days, one line per holding with activity
+    Promise.all(holdings.filter((s) => s !== "QQQ").map((s) => fh(`/stock/insider-transactions?symbol=${s}&from=${from7}&to=${to}`).then((j) => {
+      const rows = ((j && j.data) || []).filter((r) => (r.transactionCode === "P" || r.transactionCode === "S") && !r.isDerivative && r.change);
+      if (!rows.length) return null;
+      const buys = rows.filter((r) => r.transactionCode === "P").reduce((a, r) => a + r.change, 0);
+      const sells = -rows.filter((r) => r.transactionCode === "S").reduce((a, r) => a + r.change, 0);
+      const top = rows.sort((a, b) => Math.abs(b.change * (b.transactionPrice || 0)) - Math.abs(a.change * (a.transactionPrice || 0)))[0];
+      return `- ${s}: insiders bought ${buys.toLocaleString()} sh, sold ${sells.toLocaleString()} sh; largest: ${String(top.name || "").slice(0, 30)} ${top.transactionCode === "P" ? "BUY" : "SELL"} ${Math.abs(top.change).toLocaleString()} @ $${Math.round(top.transactionPrice || 0)} (${top.transactionDate})`;
+    }).catch(() => null))).then((a) => a.filter(Boolean)),
     ...holdings.map((s) => fh(`/company-news?symbol=${s}&from=${from}&to=${to}`).then((j) => [s, j])),
   ]);
   const seen = new Set();
@@ -1029,9 +1039,12 @@ ${market.join("\n") || "(none)"}
 THEIR STOCKS' HEADLINES:
 ${yours.join("\n") || "(none)"}
 
-Write plain text (no markdown symbols like ** or #), at most ~25 short lines, in this order:
+INSIDER TRADES IN THEIR STOCKS (SEC filings, last 7 days; P = open-market buy, S = sale):
+${(insiders || []).join("\n") || "(none)"}
+
+Write plain text (no markdown symbols like ** or #), at most ~28 short lines, in this order:
 TOP 3 FOR YOUR PORTFOLIO: three numbered one-line items, most important first.
-Then one or two lines each under these labels, skipping any with nothing notable: MACRO & FED; WAR & GEOPOLITICS; TECH & AI; CYBER & OUTAGES; YOUR STOCKS; NEWSLETTER PICKS.
+Then one or two lines each under these labels, skipping any with nothing notable: MACRO & FED; WAR & GEOPOLITICS; TECH & AI; CYBER & OUTAGES; YOUR STOCKS; SMART MONEY (key points only: insider buys/sells above, and any hedge-fund/13F, Berkshire, Burry, ARK, analyst upgrade/downgrade, short-seller or buyback items in the headlines; say if the informed money is buying, selling or waiting); NEWSLETTER PICKS.
 End with: TODAY'S STANCE: one calm line (e.g. "No action needed; watch X"). Never tell them to buy or sell; remind them of their rules if markets are volatile.`;
 
   let text = null;

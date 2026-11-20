@@ -12,7 +12,8 @@
 - [x] Newsletter inbox: forwarded Motley Fool / Zacks emails → Claude extracts stock calls → D1 `newsletters` + `picks` (price that day) → Telegram digest with overlaps (holdings, deep-dip list, baskets)
 - [x] Wider news alerts (AI/tech, financial shocks, disasters) + daily news brief at 8:30 PM ET (D1 `briefs`)
 - [x] Hourly tech pulse on Telegram (HN, arXiv, Hugging Face, GitHub, Finnhub tech; D1 `pulses`), switched on with TECH_PULSE=on
-- [x] Scheduled Claude briefings 3×/day (Nepal 6:52 AM recap, 12:52 PM midday, 7:22 PM pre-open) with Tech radar + Early signal
+- [x] Scheduled Claude briefings 3×/day (Nepal 6:52 AM recap, 12:52 PM midday, 7:22 PM pre-open) with Tech radar + Early signal + Smart money (insiders, 13F/hedge funds, analysts, short sellers)
+- [x] Daily Telegram brief: Smart money line (Finnhub insider transactions for holdings)
 
 ## Next
 - [ ] Newsletter scorecard: each source's picks vs. QQQ after 1/3/6 months
