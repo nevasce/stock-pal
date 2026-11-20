@@ -303,6 +303,14 @@ async function run(env, forced = false) {
     dirty = true;
   }
 
+  // Entry signal (daily close) and trim window (intraday)
+  try {
+    const sMsgs = [];
+    await signalModule(env, state, et, sMsgs, quotes);
+    if (sMsgs.length) dirty = true;
+    for (const m of sMsgs) await telegram(env, m, true);
+  } catch (e) { console.log("signal error", e && e.stack); }
+
   // Stock Pal briefing: every 5 min in market hours, hourly otherwise (BRIEFING=on)
   try {
     const bMsgs = [];
@@ -1353,6 +1361,7 @@ async function briefingModule(env, state, et, msgs, manual, quotesIn) {
     L.push(`Trend: ${rel(v50)} 50d · ${rel(v200)} 200d · vol ${wx.vol20.toFixed(0)}%`);
     L.push(`Breadth: ${wx.above}/${wx.n} above 50d · QQQ ${wx.hi252 ? Math.abs((q.c / wx.hi252 - 1) * 100).toFixed(1) : "?"}% off its high`);
   } else L.push("Trend: refresh pending");
+  const sigLine = signalLine(state); if (sigLine) L.push(sigLine);
 
   // --- your book
   let value = 0, day = 0, have = false;
@@ -1416,6 +1425,69 @@ async function briefingModule(env, state, et, msgs, manual, quotesIn) {
   msgs.push(msg);
   await dbRun(env, "INSERT INTO briefings (ts, et_date, kind, text) VALUES (?, ?, ?, ?)", [new Date().toISOString(), et.date, open ? "5min" : "hourly", msg.replace(/<[^>]+>/g, "")]);
   return true;
+}
+
+// ---------- Entry / trim signals ----------
+//
+// 1) "Higher close" entry signal, checked once per trading day at ~4:05 PM ET: QQQ or SMH closes above the
+//    previous day's high (first sign a sell-off has stopped). Telegram: 🟢 SIGNAL with the thirds plan.
+//    Otherwise the daily briefing shows "Signal: waiting (needs QQQ close > X)".
+// 2) "Trim window" alert, once per day after 10:30 AM ET: NVDA trades ≥2% above its day low with QQQ green,
+//    i.e. the bounce the user said they would trim into (NVDA 25→15, MU 3→2).
+// Settings: SIGNAL_SYMBOLS (default "QQQ,SMH"), SIGNAL_BUY (default "QQQ or GOOG"), TRIM_SYMBOL (default NVDA), TRIM_PCT (default 2).
+
+async function signalModule(env, state, et, msgs, quotes) {
+  const sg = state.sg || (state.sg = { closeDate: "", trimDate: "", levels: {} });
+  const weekday = et.weekday >= 1 && et.weekday <= 5;
+  const mins = et.hour * 60 + et.minute;
+  const syms = (env.SIGNAL_SYMBOLS || "QQQ,SMH").split(",").map((s) => s.trim().toUpperCase()).filter(Boolean);
+
+  // --- 1) daily close check (4:05–4:20 PM ET window, once)
+  if (weekday && mins >= 16 * 60 + 10 && mins < 16 * 60 + 30 && sg.closeDate !== et.date && env.ALPACA_KEY_ID) {
+    sg.closeDate = et.date;
+    // today's close/high from Finnhub (settled a few minutes after 4 PM), yesterday's high from Alpaca daily bars
+    const start = new Date(Date.now() - 10 * 86400000).toISOString().slice(0, 10);
+    const [r, qs] = await Promise.all([alpaca(env, DATA_API, `/v2/stocks/bars?symbols=${syms.join(",")}&timeframe=1Day&start=${start}&limit=1000&feed=iex`), getQuotes(env, syms)]);
+    const bars = r.ok && r.j && r.j.bars ? r.j.bars : {};
+    const hits = [], waiting = [];
+    for (const s of syms) {
+      const q = qs[s]; if (!q || !q.c) continue;
+      const prevBars = (bars[s] || []).filter((x) => x.c > 0 && String(x.t || "").slice(0, 10) < et.date);
+      const prevHigh = prevBars.length ? prevBars[prevBars.length - 1].h : (sg.levels[s] && sg.levels[s].need);
+      if (!prevHigh) continue;
+      sg.levels[s] = { need: q.h || q.c, close: q.c, date: et.date }; // tomorrow must close above today's high
+      if (q.c > prevHigh) hits.push(`${s} closed ${px(q.c)} > yesterday's high ${px(prevHigh)}`);
+      else waiting.push(`${s} ${px(q.c)} (needed > ${px(prevHigh)})`);
+    }
+    if (hits.length) {
+      msgs.push([
+        "🟢 <b>ENTRY SIGNAL — higher close</b>",
+        ...hits.map((h) => "• " + esc(h)),
+        "",
+        `Plan: first third ($${env.SIGNAL_FIRST || "1,500"}) into ${esc(env.SIGNAL_BUY || "QQQ or GOOG")}, limit order (24-hour session is thin). Second third only if it holds 3 days; last third on better news.`,
+        "Not into NVDA/AMD/MU. Log it: buy QQQ 2 @ price #signal",
+      ].join("\n"));
+    }
+    await dbRun(env, "INSERT INTO notes (ts, et_date, text) VALUES (?, ?, ?)", [new Date().toISOString(), et.date, `[signal check] ${hits.length ? "SIGNAL: " + hits.join("; ") : "no signal: " + waiting.join("; ")}`]);
+  }
+
+  // --- 2) intraday trim window (after 10:30 AM ET, once per day)
+  const ts = env.TRIM_SYMBOL || "NVDA";
+  const q = quotes && quotes[ts], qq = quotes && quotes.QQQ;
+  if (weekday && mins >= 10 * 60 + 30 && mins < 16 * 60 && sg.trimDate !== et.date && q && q.c && q.l && qq && qq.dp != null) {
+    const offLow = (q.c / q.l - 1) * 100;
+    if (offLow >= parseFloat(env.TRIM_PCT || "2") && qq.dp > 0) {
+      sg.trimDate = et.date;
+      msgs.push(`✂️ <b>TRIM WINDOW</b>: ${ts} ${px(q.c)} is ${offLow.toFixed(1)}% above its day low and QQQ is green (${fmt(qq.dp)}). This is the bounce you said you'd trim into: NVDA 25→15, MU 3→2. Use limit orders; log it: sell NVDA 10 @ price #trim`);
+    }
+  }
+  return true;
+}
+
+function signalLine(state) {
+  const sg = state.sg; if (!sg || !sg.levels) return "";
+  const parts = Object.entries(sg.levels).map(([s, v]) => `${s} close > ${px(v.need)}`);
+  return parts.length ? `🎯 Signal: waiting — needs ${parts.join(" or ")} (next close)` : "";
 }
 
 // ---------- Deep-dip scanner ----------

@@ -159,6 +159,11 @@ Log every real buy and sell point by messaging the bot; it keeps cost basis (FIF
 - `/trades` → open lots with live P/L, last closed trades, rule scoreboard (followed vs broken, P/L each).
 The Friday scorecard adds a "Real trades" section (bought this week, closed this week, scoreboard since start, open lots) and the lesson of the week uses it.
 
+## 16. Entry signal and trim window (automatic)
+- **🟢 Entry signal:** every trading day at ~4:05 PM ET the Worker checks whether QQQ or SMH closed **above the previous day's high** (the first sign a sell-off has stopped). If yes, Telegram gets a 🟢 ENTRY SIGNAL with the thirds plan (first $1,500 into QQQ or GOOG; never into the names that caused the sell-off). If not, the briefing shows "🎯 Signal: waiting — needs QQQ close > X". Every check is written to the journal (`notes`). Settings: `SIGNAL_SYMBOLS` (default `QQQ,SMH`), `SIGNAL_BUY` (default `QQQ or GOOG`), `SIGNAL_FIRST` (default `1,500`).
+- **✂️ Trim window:** once a day after 10:30 AM ET, if NVDA trades ≥2% above its day low while QQQ is green, Telegram gets a TRIM WINDOW alert (the bounce to trim NVDA 25→15 and MU 3→2 into). Settings: `TRIM_SYMBOL`, `TRIM_PCT`.
+Robinhood's 24-hour session lets you act on the signal overnight; use limit orders, the overnight book is thin.
+
 ## What you'll receive
 - 🔻/🔺 **QQQ moves ≥0.5% within 10 minutes**
 - 📉/📈 **QQQ crosses ±1%, 1.5%, 2%, 2.5%, 3%** on the day (once each)
